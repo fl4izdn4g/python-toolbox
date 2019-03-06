@@ -1,0 +1,35 @@
+version: '3'
+services:
+  update-satis:
+    image: python:3.6.8
+    working_dir: /app
+    volumes: 
+     - /shared:/app
+    command: python3 /app/composer-grabber/main.py
+  satis-init:
+    image: composer/satis
+    depends_on:
+     - update-satis
+    volumes: 
+     - ./build:/build
+     - ./composer:/composer
+  satis:
+    image: composer/satis
+    ports:
+     - "9099:6789"
+    depends_on:
+     - update-satis
+     - satis-init
+    volumes: 
+     - ./build:/build
+     - ./composer:/composer
+    entrypoint: /bin/bash -c "php -S 0.0.0.0:6789 -t /build/output/"
+  composer:
+    image: composer
+    volumes:
+     - ./php:/app
+    depends_on:
+     - update-satis
+     - satis-init
+     - satis
+    command: composer install
